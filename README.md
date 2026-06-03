@@ -1,0 +1,17 @@
+
+# Metagenome profiler
+
+
+Environmental monitoring is a critical component of pandemic readiness. The objective of the programming 
+assignment is to develop a general method for characterizing the viral communities in a metagenomic sample. 
+The input to your method is a short-read fastq file (examples below) containing sequences from a metagenomic 
+sample. The output is a characterization of the virome that would be useful to someone working in pandemic 
+preparedness (researcher, clinician, and/or public health official). Is up to you to decide the content and format 
+of this report, both of which should be justified in your written and recorded reports.
+
+Data was downloaded from these accession numbers using the SRA toolkit [here](https://github.com/ncbi/sra-tools):
+
+```bash
+prefetch SRR12464727 SRR12432009	
+
+```
