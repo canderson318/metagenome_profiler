@@ -8,6 +8,7 @@ unzip -n ncbi_dataset.zip
 
 rsync -av --update ncbi_dataset/ in/
 
-rm -r ncbi_dataset*
+mv in/data in/bat_genome/
 
+rm -r ncbi_dataset*
 rm md5sum.txt

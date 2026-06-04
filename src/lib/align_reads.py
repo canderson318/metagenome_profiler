@@ -4,9 +4,12 @@ from pathlib import Path
 import os
 import numpy as np 
 from itertools import islice
-from  multiprocessing import Pool
 import pickle as pkl
-from src.lib.kmers import extract_kmers
+import multiprocessing
+multiprocessing.set_start_method('fork', force=True)
+from  multiprocessing import Pool
+from src.lib.kmers import extract_kmers, get_num_reads
+from src.lib.index_host import extract_kmers, index_host
 
 def host_match(read:SeqIO.SeqRecord,ref_kmers: set, K = None):
     """
@@ -22,8 +25,10 @@ def host_match(read:SeqIO.SeqRecord,ref_kmers: set, K = None):
         raise ValueError("Reference Kmer size does not match specified K.")
     seq = str(read.seq).upper()
     kmers = extract_kmers(seq, K)
-    hits = len(set(kmers) & ref_kmers)
-    return hits / len(kmers) 
+    if not kmers:
+        return 0.0
+    hits = len(kmers & ref_kmers)
+    return hits / len(kmers)
 
 # host_match(SeqIO.SeqRecord(Seq("ALKDJFLSKDJFSLDKALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSFJS")), ref_kmers)
 # host_match(SeqIO.SeqRecord(Seq("TCATCTATTTGGGTCTTTAAACTGTATTTAA"*10)), ref_kmers)
@@ -59,34 +64,57 @@ def process_chunk(args):
     return results
 
 
-def align_reads(samp_file, ref_index_file, K, test = False):
+def align_reads(samp_file, ref_index_file, K, n_chunks = 16,ncores = 8, test = False, thresh = .2):
     """
     Align each read to reference by comparing each read's kmers to reference kmers
     """
     ref_kmers = pkl.load(open(ref_index_file, 'rb'))
 
     # make chunks of indices to parallelize over
-    print("Counting reads...")
-    # N_reads = sum(1 for _ in SeqIO.parse(samp_file, 'fastq')) # 39_257_492
-    N_reads = 39_257_492
-    n_cores = 8
-    n_chunks = n_cores * 2
-    offsets, chunk_size = find_chunk_offsets(samp_file, n_cores * 2, N_reads)
-    chunk_args = [(samp_file, offset, chunk_size, K) for offset in offsets]
+    N_reads = get_num_reads(samp_file)
+    print(f"Finding {n_chunks} chunk offsets...")
+    offsets, chunk_size = find_chunk_offsets(samp_file, n_chunks, N_reads)
+    chunk_args = [(samp_file, chunk_size, offset, K) for offset in offsets]
+    print("Done.")
 
-    print(f"Processing {len(CHUNKS)} chunks...")
+    print(f"Processing {len(chunk_args)} chunks...")
     if test:
-        xchunk_args = chunk_args[:3]
+        xchunk_args = [(samp_file, 100,0, K)]
         Xref_kmers = set(list(ref_kmers)[:100])
-        xn_cores = 3
-
-        with Pool(processes=xn_cores, initializer=init_worker, initargs=(Xref_kmers,)) as pool:
+        print(f"\ttesting on first {len(xchunk_args)}...")
+        with Pool(processes=ncores, initializer=init_worker, initargs=(Xref_kmers,)) as pool:
             results = pool.map(process_chunk, xchunk_args)
     else:
-        chunk_args = [(samp_file, start, stop, K) for start, stop in CHUNKS]
         with Pool(processes=n_cores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
             results = pool.map(process_chunk, chunk_args)
 
     print(f"Done.")
-    return [x for chunk in results for x in chunk]
+    alignment = [x for chunk in results for x in chunk]
+    hit_inds = np.where([x > thresh for x in alignment ])[0]
+    non_hit_inds = np.setdiff1d(range(N_reads), hit_inds)
     
+    if not hit_inds.size:
+        return None, True
+    else:
+        return hit_inds, non_hit_inds
+    
+def align(samp_file, ref_file, K, out_dir,ncores = 8, test = False):
+    ref_index_file_path, _ = index_host(K=K, ref_file=ref_file, which_scaffolds=[0], force=False)
+
+    hit_inds, non_hit_inds = align_reads(samp_file, ref_index_file_path, K=K, test=test, n_chunks = ncores * 2, ncores = ncores)  # XXX
+
+    ind_file = out_dir / "reads_from_host.inds"
+    
+    dummy_hits = np.sort(np.random.choice(range(get_num_reads(samp_file)), 100)) # stubbed results
+    np.savetxt(ind_file.parent / ("dummy_" + ind_file.stem + ind_file.suffix), dummy_hits, delimiter="\n", fmt="%d") 
+    
+    if hit_inds is None:
+        print("No host reads found.")
+        return None, None
+
+    np.savetxt(ind_file, hit_inds, delimiter="\n", fmt="%d")
+    print(f"Hit indices saved to {str(ind_file)}")
+    
+    return hit_inds, non_hit_inds
+
+        
