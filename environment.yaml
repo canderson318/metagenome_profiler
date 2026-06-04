@@ -1,0 +1,35 @@
+name: basic
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - ipython
+  - ipywidgets
+  - jupyterlab=4.2.*
+  - jupyter_contrib_nbextensions=0.7.*
+  - jupytext=1.*
+  - matplotlib=3.9.*
+  - nodejs=22.*
+  - pandas=2.2.*
+  - pandoc=3.*
+  - pip
+  - pre-commit=4.0.*
+  - python=3.12.*
+  - pyyaml=6.*
+  - r-base=4.4.*
+  - r-essentials
+  - r-irkernel
+  - r-ggplot2=4.0.*
+  - r-dplyr=1.1.*
+  - r-tidyverse=2.0.*
+  - r-kableextra=1.4.*
+  - rpy2=3.6.*
+  - scipy=1.14.*
+  - seaborn=0.13.*
+  - scikit-learn=1.5.*
+  - statsmodels=0.14.*
+  - tqdm=4.*
+  - biopython
+  - blast
+  - ncbi-datasets-cli

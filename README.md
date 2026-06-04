@@ -9,9 +9,14 @@ sample. The output is a characterization of the virome that would be useful to s
 preparedness (researcher, clinician, and/or public health official). Is up to you to decide the content and format 
 of this report, both of which should be justified in your written and recorded reports.
 
-Data was downloaded from these accession numbers using the SRA toolkit [here](https://github.com/ncbi/sra-tools):
+Data was downloaded from these accession numbers using the SRA toolkit [here](https://github.com/ncbi/sra-tools). I used a script to parallelize the process here `src/download_sra.sh`.
+
+
+
+# Environment setup
+use `environment.yaml` to setup your python environment with conda
 
 ```bash
-prefetch SRR12464727 SRR12432009	
-
+conda env create -n environment.yaml
+conda activate basic
 ```
