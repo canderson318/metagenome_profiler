@@ -4,7 +4,7 @@ import numpy as np
 import pickle as pkl
 from multiprocessing import Pool
 from functools import partial
-from src.lib.kmers import extract_kmers
+from src.lib.qc.kmers import extract_kmers
 
 
 def _outlier_scaffold_indices(ref_file):

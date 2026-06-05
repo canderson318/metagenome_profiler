@@ -8,8 +8,8 @@ import pickle as pkl
 import multiprocessing
 multiprocessing.set_start_method('fork', force=True)
 from  multiprocessing import Pool
-from src.lib.kmers import extract_kmers, get_num_reads
-from src.lib.index_host import extract_kmers, index_host
+from src.lib.qc.kmers import extract_kmers, get_num_reads
+from src.lib.qc.index_host import extract_kmers, index_host
 
 def host_match(read:SeqIO.SeqRecord,ref_kmers: set, K = None):
     """

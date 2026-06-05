@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.lib.align_reads import align
+from src.lib.qc.align_reads import align
 import numpy as np
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -23,12 +23,5 @@ def filter_reads(samp_file, ref_file,out_dir, K = 31,  out_file = "host_filtered
             if i not in hits_set:
                 fout.write(f">{h1[1:]}{seq}")  # @ → >, skip qual
     print(f"Done.")
-
-### usage:
-# in_dir = Path("in/")
-# out_dir = Path("out/")
-
-# ref_file = in_dir / "bat_genome/GCF_004115265.2/GCF_004115265.2_mRhiFer1_v1.p_genomic.fna"
-# samp_file = in_dir / "SRR12464727.fastq"
-
-# filter_reads(samp_file, ref_file,out_dir = out_dir, K = 31, out_file = "host_filtered.fasta", test = True)
+    
+    return out_file_path

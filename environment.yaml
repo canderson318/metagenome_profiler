@@ -33,3 +33,4 @@ dependencies:
   - biopython
   - blast
   - ncbi-datasets-cli
+  - networkx
