@@ -85,7 +85,7 @@ def align_reads(samp_file, ref_index_file, K, n_chunks = 16,ncores = 8, test = F
         with Pool(processes=ncores, initializer=init_worker, initargs=(Xref_kmers,)) as pool:
             results = pool.map(process_chunk, xchunk_args)
     else:
-        with Pool(processes=n_cores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
+        with Pool(processes=ncores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
             results = pool.map(process_chunk, chunk_args)
 
     print(f"Done.")
