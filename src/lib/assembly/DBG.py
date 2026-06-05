@@ -12,8 +12,9 @@ class DBG:
         self.k = k
         self.__graph = None
         self._construct_graph(reads, k)
-        self.__incoming_weight = None
-        self.__outgoing_weight = None
+        self.__in_deg = None
+        self.__out_deg = None
+        self.contigs = None
 
     def _construct_graph(self, reads: List[str], k: int):
         """
@@ -33,20 +34,17 @@ class DBG:
                 u, v = kmer[:-1], kmer[1:]
                 self.__graph[u][v] += 1
         
-    def calculate_incoming_weights(self):
+    def calculate_degs(self):
         """
         Compute incoming edge weights between each node. 
         """
-        self.__incoming_weight = defaultdict(int)
+        self.__in_deg = defaultdict(int)
+        self.__out_deg = defaultdict(int)
         for u, outs in tqdm(self.__graph.items(), desc = 'Calculating incoming edge weights'):
-            for v,n in outs.items():
-                self.__incoming_weight[v] += n
+            self.__out_deg[u] = len(self.__graph.get(u,{}))
+            for v in outs:
+                self.__in_deg[v] += 1
 
-    def calculate_outgoing_weights(self):
-        self.__outgoing_weight = defaultdict(int)
-        for u, outs in tqdm(self.__graph.items(), desc = 'Calculating outgoing edge weights'):
-            self.__outgoing_weight[u] = len(self.__graph.get(u, {}))
-        
     def prune_low_coverage_nodes(self, coverage_thresh: int = 2):
         """
         For each node, cut edges (and nodes) where coverage < threshold.
@@ -99,18 +97,80 @@ class DBG:
                                 self.__graph[u][v1] += self.__graph[u].pop(v2)
                             else:
                                 self.__graph[u][v2] += self.__graph[u].pop(v1)  # if v1 seen more, etc.    
-
-    @property
-    def incoming_weights(self):
-        if self.__incoming_weight is None:
-            self.calculate_incoming_weights()
-        return self.__incoming_weight
     
+    def make_contigs(self):
+        """
+        """
+        contigs = []
+        visited = set()
+
+        self.calculate_degs()
+        
+        in_weights = self.__in_deg
+        
+        for u in tqdm(list(self.__graph), desc="Finding Contigs"):
+            # get nodes connected to u
+            out_edges = list(self.__graph[u])
+            # check if there are outgoing edges 
+            is_branching = (len(out_edges) != 1) or (in_weights.get(u, 0) != 1)
+            if not is_branching:
+                continue
+            
+            #–––– for each vertex in outgoing edges
+            for v in out_edges:
+                # if this pair has been visited, this is a loop, pass on 
+                if (u, v) in visited:
+                    continue
+                path_nodes = [u, v]
+                # edge coverages outgoing from u
+                coverages = [self.__graph[u][v]]
+                visited.add((u, v))
+                curr = v
+                # while no alternate routes to take (no branches) and only one previous edge
+                while len(self.__graph.get(curr, {})) == 1 and in_weights.get(curr, 0) == 1:
+                    nxt = next(iter(self.__graph[curr]))
+                    path_nodes.append(nxt)
+                    coverages.append(self.__graph[curr][nxt])
+                    visited.add((curr, nxt))
+                    curr = nxt
+                # construct contiguous sequence: first node + last char of all next
+                seq = path_nodes[0] + ''.join(n[-1] for n in path_nodes[1:])
+                contigs.append((seq, path_nodes, coverages))
+            
+        #–––– traverse again, this time exploring loops
+        for u in list(self.__graph):
+            for v in list(self.__graph[u]):
+                if (u, v) in visited:
+                    continue
+                path_nodes = [u, v]
+                coverages = [self.__graph[u][v]]
+                visited.add((u, v))
+                curr = v
+                # while more to explore
+                while len(self.__graph.get(curr, {})) == 1 and self.__in_deg.get(curr,0) == 1:
+                    nxt = next(iter(self.__graph[curr]))
+                    # if this edge has been traversed before, break
+                    if (curr, nxt) in visited:
+                        path_nodes.append(nxt) # close cycle
+                        break
+                    path_nodes.append(nxt)
+                    coverages.append(self.__graph[curr][nxt])
+                    visited.add((curr, nxt))
+                    curr = nxt
+                seq = path_nodes[0] + ''.join(n[-1] for n in path_nodes[1:])
+                contigs.append((seq, path_nodes, coverages))
+        # returns 
+        self.contigs = contigs
+        
+        
     @property
-    def outgoing_weights(self):
-        if self.__outgoing_weight is None:
-            self.calculate_outgoing_weights()
-        return self.__outgoing_weight
+    def degrees(self):
+        """
+        Returns incoming degrees, outgoiong degrees
+        """
+        if self.__in_deg is None or self.__out_deg is None:
+            self.calculate_degs()
+        return self.__in_deg, self.__out_deg
     
     @property
     def G(self):
@@ -132,6 +192,13 @@ class DBG:
         nx.draw_networkx_nodes(G, ax = ax, pos = pos,node_size=800, node_color = "#9c5ac2ff")
         nx.draw_networkx_labels(G, ax = ax, pos = pos, font_size=9,font_color = "black")
         nx.draw_networkx_edges(G, edge_color="black", pos = pos)
+
+
+# \\\\
+# \\\\
+# –––––– Other
+# \\\\
+# \\\\
 
 def load_hobbit(up_to = None):
     """
@@ -156,9 +223,9 @@ def sim_reads(seq, N, read_len):
     :param N: number of reads to generate
     :param read_len: size of each read
     '''
-    np.random.default_rng(123)
+    rng = np.random.default_rng(123)
     return [seq[strt:strt+read_len]  
             for _ in range(N) 
-                for strt in [np.random.choice(range(len(seq) - read_len+1))]
+                for strt in [rng.integers(0, len(seq)-read_len+1)]
                 ]
     

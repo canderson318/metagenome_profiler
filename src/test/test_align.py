@@ -13,7 +13,7 @@ from src.lib.kmers import extract_kmers
 
 
 # \\\
-# –––– fixtures 
+# –––– Set pytest fixtures 
 # \\\
 
 @pytest.fixture
