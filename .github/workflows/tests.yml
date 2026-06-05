@@ -18,4 +18,4 @@ jobs:
 
       - name: run tests
         shell: bash -el {0}
-        run: pytest src/tests/test_align.py -v
+        run: pytest src/test/* -v

@@ -8,8 +8,8 @@ from Bio.SeqRecord import SeqRecord
 from Bio.Seq import Seq
 
 # funcs to test
-from src.lib.align_reads import host_match, find_chunk_offsets, align_reads
-from src.lib.kmers import extract_kmers
+from src.lib.qc.align_reads import host_match, find_chunk_offsets, align_reads
+from src.lib.qc.kmers import extract_kmers
 
 
 # \\\

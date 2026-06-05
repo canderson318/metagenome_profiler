@@ -34,7 +34,7 @@ class DBG:
                 u, v = kmer[:-1], kmer[1:]
                 self.__graph[u][v] += 1
         
-    def calculate_degs(self):
+    def calculate_degrees(self):
         """
         Compute incoming edge weights between each node. 
         """
@@ -55,7 +55,38 @@ class DBG:
                     del self.__graph[u][v] # remove edges to infrequent nodes
             if not self.__graph[u]:
                 del self.__graph[u] # remove nodes with no edges
-                
+
+            
+    @property
+    def degrees(self):
+        """
+        Returns incoming degrees, outgoiong degrees
+        """
+        if self.__in_deg is None or self.__out_deg is None:
+            self.calculate_degrees()
+        return self.__in_deg, self.__out_deg
+    
+    @property
+    def G(self):
+        return self.__graph
+
+    def plotG(self, weighted = True, ax = None):
+        # make graph object
+        if weighted:
+            graph_list = [(u,v,w) for u,vs in self.__graph.items() for v,w in vs.items()]
+            G = nx.DiGraph()
+            G.add_weighted_edges_from(graph_list)
+        else:
+            graph_list = [(u,v) for u,vs in self.__graph.items() for v,_ in vs.items()]
+            G = nx.DiGraph()
+            G.add_edges_from(graph_list)
+        # plot graph
+        _,ax = plt.subplots(figsize = (10,10)) if ax is None else None, ax
+        pos = nx.spring_layout(G, seed = 2026)
+        nx.draw_networkx_nodes(G, ax = ax, pos = pos,node_size=800, node_color = "#9c5ac2ff")
+        nx.draw_networkx_labels(G, ax = ax, pos = pos, font_size=9,font_color = "black")
+        nx.draw_networkx_edges(G, edge_color="black", pos = pos, arrows = True, arrowstyle = '->', arrowsize = 20)
+
     @staticmethod
     def _calc_divergence(seq1, seq2):
         matcher = SequenceMatcher(None, seq1, seq2)
@@ -96,13 +127,13 @@ class DBG:
                         else:
                             self.__graph[u][v2] += self.__graph[u].pop(v1)  # if v1 seen more, etc.    
     
-    def make_contigs(self):
+    def make_contigs(self, returns=False):
         """
         """
-        contigs = []
+        sub_contigs = []
         visited = set()
 
-        self.calculate_degs()
+        self.calculate_degrees()
         
         in_weights = self.__in_deg
         
@@ -133,7 +164,7 @@ class DBG:
                     curr = nxt
                 # construct contiguous sequence: first node + last char of all next
                 seq = path_nodes[0] + ''.join(n[-1] for n in path_nodes[1:])
-                contigs.append((seq, path_nodes, coverages))
+                sub_contigs.append((seq, path_nodes, coverages))
             
         #–––– traverse again, this time exploring loops
         for u in list(self.__graph):
@@ -156,40 +187,36 @@ class DBG:
                     visited.add((curr, nxt))
                     curr = nxt
                 seq = path_nodes[0] + ''.join(n[-1] for n in path_nodes[1:])
-                contigs.append((seq, path_nodes, coverages))
+                sub_contigs.append((seq, path_nodes, coverages))
+        self.__sub_contigs = sub_contigs
+        
+        
+        #–––– join contig subunits together where possible
+        
+        print("Joining subcontigs...")
+        # index by first node of each sub-contig
+        start_idx = defaultdict(list)
+        for item in sub_contigs:
+            start_idx[item[1][0]].append(item)
+
+        contigs = list(sub_contigs)  # keep originals
+        
+        prev_len = 0
+        while len(contigs) != prev_len:
+            prev_len = len(contigs)
+            start_idx = defaultdict(list)
+            for item in contigs:
+                start_idx[item[1][0]].append(item)
+            for seq_i, nodes_i, covs_i in list(contigs):
+                for seq_j, nodes_j, covs_j in start_idx.get(nodes_i[-1], []):
+                    joined = (seq_i + seq_j[len(nodes_i[-1]):], nodes_i + nodes_j[1:], covs_i + covs_j)
+                    if joined not in contigs:
+                        contigs.append(joined)
+
         # returns 
         self.contigs = contigs
-        
-        
-    @property
-    def degrees(self):
-        """
-        Returns incoming degrees, outgoiong degrees
-        """
-        if self.__in_deg is None or self.__out_deg is None:
-            self.calculate_degs()
-        return self.__in_deg, self.__out_deg
-    
-    @property
-    def G(self):
-        return self.__graph
-
-    def plotG(self, weighted = True, ax = None):
-        # make graph object
-        if weighted:
-            graph_list = [(u,v,w) for u,vs in self.__graph.items() for v,w in vs.items()]
-            G = nx.Graph()
-            G.add_weighted_edges_from(graph_list)
-        else:
-            graph_list = [(u,v) for u,vs in self.__graph.items() for v,_ in vs.items()]
-            G = nx.Graph()
-            G.add_edges_from(graph_list)
-        # plot graph
-        _,ax = plt.subplots(figsize = (10,10)) if ax is None else None, ax
-        pos = nx.spring_layout(G, seed = 2026)
-        nx.draw_networkx_nodes(G, ax = ax, pos = pos,node_size=800, node_color = "#9c5ac2ff")
-        nx.draw_networkx_labels(G, ax = ax, pos = pos, font_size=9,font_color = "black")
-        nx.draw_networkx_edges(G, edge_color="black", pos = pos)
+        if returns:
+            return self.contigs
 
 
 # \\\\
@@ -227,3 +254,13 @@ def sim_reads(seq, N, read_len):
                 for strt in [rng.integers(0, len(seq)-read_len+1)]
                 ]
     
+
+branching_reads = ["axbcde"] * 5 + ["abfdeghij"] * 5
+branching_graph = DBG(branching_reads, 3)
+branching_graph.plotG()
+
+contigs  = branching_graph.make_contigs(True)
+seqs = [seq for seq, _, _ in contigs]
+for seq in seqs: 
+    print(seq)
+all([len(seqs) == 5] + [x in seqs for x in ["axbcde","abfde","axbcdeghij","deghij","abfdeghij"]])
