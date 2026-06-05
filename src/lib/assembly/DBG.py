@@ -65,7 +65,7 @@ class DBG:
                 ed += max(i2 - i1, j2 - j1)
         return ed / min(len(seq1), len(seq2))
 
-    def prune_low_coverage_connections(self,pruned_seq_size_ceiling: int = 1000, seq_divergence_ceiling: float = 0.2):
+    def prune_low_coverage_connections(self, seq_divergence_ceiling: float = 0.2):
         """
         For each node, compare forward connected nodes and pick larger of pair, swallowing up hte smaller's coverage 
         where sequences are small enough (< pruned_seq_size_ceiling) and similar enough (< seq_divergence_ceiling) 
@@ -86,17 +86,15 @@ class DBG:
                     # reconstruct original sequence for both: prev + last char of node
                     seq1 = u + v1[-1] 
                     seq2 = u + v2[-1]
-                    # if sequences small enough 
-                    if len(seq1) <= pruned_seq_size_ceiling and len(seq2) <= pruned_seq_size_ceiling:
-                        # calculate string difference between both sequences
-                        divergence = self._calc_divergence(seq1,seq2) # closer to 1 is more divergent
-                        # if they are divergent enough
-                        if divergence < seq_divergence_ceiling: 
-                            # pick more covered of two, adding its coverage and removing it
-                            if self.__graph[u][v1] >= self.__graph[u][v2]: # if v2 seen more, swallow v2 coverage
-                                self.__graph[u][v1] += self.__graph[u].pop(v2)
-                            else:
-                                self.__graph[u][v2] += self.__graph[u].pop(v1)  # if v1 seen more, etc.    
+                    # calculate string difference between both sequences
+                    divergence = self._calc_divergence(seq1,seq2) # closer to 1 is more divergent
+                    # if they are divergent enough
+                    if divergence < seq_divergence_ceiling: 
+                        # pick more covered of two, adding its coverage and removing it
+                        if self.__graph[u][v1] >= self.__graph[u][v2]: # if v2 seen more, swallow v2 coverage
+                            self.__graph[u][v1] += self.__graph[u].pop(v2)
+                        else:
+                            self.__graph[u][v2] += self.__graph[u].pop(v1)  # if v1 seen more, etc.    
     
     def make_contigs(self):
         """
