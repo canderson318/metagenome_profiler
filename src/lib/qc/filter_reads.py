@@ -13,6 +13,7 @@ def filter_reads(samp_file, ref_file,out_dir, K = 31,  out_file = "host_filtered
     # \\\\
     # filter out host reads
     # \\\\
+    
     hits = set(np.loadtxt(out_dir / "dummy_reads_from_host.inds", dtype=int)) # XXX
     hits_set = set(hits)
     out_file_path = out_dir / out_file

@@ -1,3 +1,4 @@
+from Bio import SeqIO
 from collections import defaultdict
 from typing import List, Dict
 from difflib import SequenceMatcher
@@ -8,7 +9,7 @@ import matplotlib.pyplot as plt
 import re
 
 class DBG:
-    def __init__(self, reads: List[str], k: int):
+    def __init__(self, reads: List[str] or SeqIO, k: int):
         self.k = k
         self.__graph = None
         self._construct_graph(reads, k)
@@ -16,7 +17,7 @@ class DBG:
         self.__out_deg = None
         self.contigs = None
 
-    def _construct_graph(self, reads: List[str], k: int):
+    def _construct_graph(self, reads: List[str] or SeqIO, k: int):
         """
         Generate debrujin graph from reads. 
         Works by ticking nested dictionary at index of [kmer[-end], kmer[-start]].
@@ -28,8 +29,9 @@ class DBG:
         # make dict where new keys make new element so indexing at nonexistent key doesnt keyerror
         self.__graph = defaultdict(lambda: defaultdict(int))
         for read in tqdm(reads, desc = "Constructing graph"):
-            for i in range(len(read) - k + 1):
-                kmer = read[i:i+k]
+            seq = str(read.seq) if hasattr(read, "seq") else read
+            for i in range(len(seq) - k + 1):
+                kmer = seq[i:i+k]
                 # add index to dict at u, v k-1mer
                 u, v = kmer[:-1], kmer[1:]
                 self.__graph[u][v] += 1
@@ -254,13 +256,12 @@ def sim_reads(seq, N, read_len):
                 for strt in [rng.integers(0, len(seq)-read_len+1)]
                 ]
     
-
-branching_reads = ["axbcde"] * 5 + ["abfdeghij"] * 5
-branching_graph = DBG(branching_reads, 3)
-branching_graph.plotG()
-
-contigs  = branching_graph.make_contigs(True)
-seqs = [seq for seq, _, _ in contigs]
-for seq in seqs: 
-    print(seq)
-all([len(seqs) == 5] + [x in seqs for x in ["axbcde","abfde","axbcdeghij","deghij","abfdeghij"]])
+# # manual test
+# branching_reads = ["axbcde"] * 5 + ["abfdeghij"] * 5
+# branching_graph = DBG(branching_reads, 3)
+# branching_graph.plotG()
+# contigs  = branching_graph.make_contigs(True)
+# seqs = [seq for seq, _, _ in contigs]
+# for seq in seqs: 
+#     print(seq)
+# all([len(seqs) == 5] + [x in seqs for x in ["axbcde","abfde","axbcdeghij","deghij","abfdeghij"]])

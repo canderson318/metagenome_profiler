@@ -105,8 +105,9 @@ def align(samp_file, ref_file, K, out_dir,ncores = 8, test = False):
 
     ind_file = out_dir / "reads_from_host.inds"
     
-    dummy_hits = np.sort(np.random.choice(range(get_num_reads(samp_file)), 100)) # stubbed results
-    np.savetxt(ind_file.parent / ("dummy_" + ind_file.stem + ind_file.suffix), dummy_hits, delimiter="\n", fmt="%d") 
+    print("Saving dummy hits")
+    dummy_hits = np.sort(np.random.choice(range(get_num_reads(samp_file)), 39257000)) # XXX
+    np.savetxt(ind_file.parent / ("dummy_" + ind_file.stem + ind_file.suffix), dummy_hits, delimiter="\n", fmt="%d") # XXX
     
     if hit_inds is None:
         print("No host reads found.")

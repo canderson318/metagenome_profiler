@@ -2,17 +2,6 @@ import pytest
 from src.lib.assembly.DBG import *
 
     
-# branching_reads = ["axbcde"] * 5 + ["abfdeghij"] * 5
-# branching_graph = DBG(branching_reads, 3)
-# branching_graph.plotG()
-# branching_graph.make_contigs()
-# contigs = branching_graph.contigs
-# seqs = [seq for seq, _, _ in contigs]
-# for seq in seqs: 
-#     print(seq)
-# print(len(seqs) == 2,"axbcde" in seqs,"abfdeghij" in seqs)
-
-
 # \\\
 # –––– Fixtures
 # \\\
