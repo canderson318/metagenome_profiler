@@ -34,3 +34,5 @@ dependencies:
   - blast
   - ncbi-datasets-cli
   - networkx
+  - tar
+  - kraken2

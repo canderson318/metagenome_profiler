@@ -11,6 +11,7 @@ of this report, both of which should be justified in your written and recorded r
 
 Data was downloaded from these accession numbers using the SRA toolkit [here](https://github.com/ncbi/sra-tools). I used a script to parallelize the process here `src/download_sra.sh`.
 
+Viral genome was downloaded from [here](https://genome-idx.s3.amazonaws.com/kraken/k2_viral_20260226.tar.gz)
 
 
 # Environment setup

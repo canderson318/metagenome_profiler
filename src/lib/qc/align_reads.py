@@ -9,7 +9,7 @@ import multiprocessing
 multiprocessing.set_start_method('fork', force=True)
 from  multiprocessing import Pool
 from src.lib.qc.kmers import extract_kmers, get_num_reads
-from src.lib.qc.index_host import extract_kmers, index_host
+from src.lib.qc.index_host import index_host
 
 def host_match(read:SeqIO.SeqRecord,ref_kmers: set, K = None):
     """
@@ -79,11 +79,11 @@ def align_reads(samp_file, ref_index_file, K, n_chunks = 16,ncores = 8, test = F
 
     print(f"Processing {len(chunk_args)} chunks...")
     if test:
-        xchunk_args = [(samp_file, 100,0, K)]
-        Xref_kmers = set(list(ref_kmers)[:100])
-        print(f"\ttesting on first {len(xchunk_args)}...")
-        with Pool(processes=ncores, initializer=init_worker, initargs=(Xref_kmers,)) as pool:
-            results = pool.map(process_chunk, xchunk_args)
+        chunk_args = [(samp_file, 100,0, K)]
+        ref_kmers = set(list(ref_kmers)[:100])
+        print(f"\ttesting on first {len(chunk_args)}...")
+        with Pool(processes=ncores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
+            results = pool.map(process_chunk, chunk_args)
     else:
         with Pool(processes=ncores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
             results = pool.map(process_chunk, chunk_args)
@@ -91,31 +91,36 @@ def align_reads(samp_file, ref_index_file, K, n_chunks = 16,ncores = 8, test = F
     print(f"Done.")
     alignment = [x for chunk in results for x in chunk]
     hit_inds = np.where([x > thresh for x in alignment ])[0]
-    non_hit_inds = np.setdiff1d(range(N_reads), hit_inds)
     
     if not hit_inds.size:
-        return None, True
+        return np.array([])
     else:
-        return hit_inds, non_hit_inds
+        return hit_inds
     
-def align(samp_file, ref_file, K, out_dir,ncores = 8, test = False):
+def align(samp_file, ref_file, K, out_dir,ncores = 8, test = False, force = False):
+    
     ref_index_file_path, _ = index_host(K=K, ref_file=ref_file, which_scaffolds=[0], force=False)
-
-    hit_inds, non_hit_inds = align_reads(samp_file, ref_index_file_path, K=K, test=test, n_chunks = ncores * 2, ncores = ncores)  # XXX
 
     ind_file = out_dir / "reads_from_host.inds"
     
-    print("Saving dummy hits")
-    dummy_hits = np.sort(np.random.choice(range(get_num_reads(samp_file)), 39257000)) # XXX
-    np.savetxt(ind_file.parent / ("dummy_" + ind_file.stem + ind_file.suffix), dummy_hits, delimiter="\n", fmt="%d") # XXX
+    if (not ind_file.exists()) or force:
+        hit_inds = align_reads(samp_file, ref_index_file_path, K=K, test=test, n_chunks = ncores * 2, ncores = ncores) 
+        print(f"Hit indices saved to {str(ind_file)}")
+        np.savetxt(ind_file, hit_inds, delimiter="\n", fmt="%d")
+    else:
+        print("Reads already aligned to host so using those.\nUse `force` to align again.")
+        hit_inds = np.loadtxt(ind_file)
+    
+    if test:
+        print("\tSaving dummy hits")
+        rng = np.random.default_rng(234)
+        dummy_hits = np.sort(rng.choice(get_num_reads(samp_file),size = 39257000,replace = False)) 
+        np.savetxt(ind_file.parent / ("dummy_" + ind_file.stem + ind_file.suffix), dummy_hits, delimiter="\n", fmt="%d") 
+        print("\tDone.")
     
     if hit_inds is None:
         print("No host reads found.")
-        return None, None
-
-    np.savetxt(ind_file, hit_inds, delimiter="\n", fmt="%d")
-    print(f"Hit indices saved to {str(ind_file)}")
-    
-    return hit_inds, non_hit_inds
+        return np.array([])
+    return hit_inds
 
         

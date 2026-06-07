@@ -1,11 +1,11 @@
 from pathlib import Path
 from Bio import SeqIO
 
-def get_num_reads(samp_file):
+def get_num_reads(samp_file, format = "fastq"):
     samp_file = Path(samp_file)
     size_file = samp_file.parent / ("."+samp_file.stem + "_size")
     if not size_file.exists():
-        size = sum(1 for _ in SeqIO.parse(samp_file, 'fastq'))
+        size = sum(1 for _ in SeqIO.parse(samp_file, format))
         with open(size_file, 'wt') as f:
             f.write(str(size))
     else:
@@ -19,7 +19,7 @@ def reverse_complement(seq):
 
 def extract_kmers(seq,k):
     kmers = set()
-    for i in range(len(seq) - k):
+    for i in range(len(seq) - k + 1):
         kmer = seq[i:i+k]
         # take smaller of two strand kmers (identical but read from opposite strands)
         rc = reverse_complement(kmer)

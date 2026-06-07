@@ -1,6 +1,6 @@
 from Bio import SeqIO
 from collections import defaultdict
-from typing import List, Dict
+from typing import List, Dict, Union
 from difflib import SequenceMatcher
 import numpy as np
 from  tqdm import tqdm
@@ -9,36 +9,40 @@ import matplotlib.pyplot as plt
 import re
 
 class DBG:
-    def __init__(self, reads: List[str] or SeqIO, k: int):
-        self.k = k
+    def __init__(self, reads: Union[List[str], SeqIO], K: int):
+        self.K = K
         self.__graph = None
-        self._construct_graph(reads, k)
+        self._construct_graph(reads, K)
         self.__in_deg = None
         self.__out_deg = None
         self.contigs = None
 
-    def _construct_graph(self, reads: List[str] or SeqIO, k: int):
+    @staticmethod
+    def _nested_int():
+      return defaultdict(int)
+
+    def _construct_graph(self, reads: Union[List[str], SeqIO], K: int):
         """
-        Generate debrujin graph from reads. 
+        Generate debrujin graph from reads.
         Works by ticking nested dictionary at index of [kmer[-end], kmer[-start]].
         Each top-level key is preceding, items are successor nodes
-        
+
         :param reads: list of gene reads
         :param k: Kmer size
         """
         # make dict where new keys make new element so indexing at nonexistent key doesnt keyerror
-        self.__graph = defaultdict(lambda: defaultdict(int))
+        self.__graph = defaultdict(self._nested_int)
         for read in tqdm(reads, desc = "Constructing graph"):
             seq = str(read.seq) if hasattr(read, "seq") else read
-            for i in range(len(seq) - k + 1):
-                kmer = seq[i:i+k]
+            for i in range(len(seq) - K + 1):
+                kmer = seq[i:i+K]
                 # add index to dict at u, v k-1mer
                 u, v = kmer[:-1], kmer[1:]
                 self.__graph[u][v] += 1
-        
+
     def calculate_degrees(self):
         """
-        Compute incoming edge weights between each node. 
+        Compute incoming edge weights between each node.
         """
         self.__in_deg = defaultdict(int)
         self.__out_deg = defaultdict(int)
@@ -52,13 +56,13 @@ class DBG:
         For each node, cut edges (and nodes) where coverage < threshold.
         """
         for u in tqdm(list(self.__graph), desc = "Pruning nodes"):
-            for v, w in list(self.__graph[u].items()): 
-                if w < coverage_thresh: 
+            for v, w in list(self.__graph[u].items()):
+                if w < coverage_thresh:
                     del self.__graph[u][v] # remove edges to infrequent nodes
             if not self.__graph[u]:
                 del self.__graph[u] # remove nodes with no edges
 
-            
+
     @property
     def degrees(self):
         """
@@ -67,7 +71,7 @@ class DBG:
         if self.__in_deg is None or self.__out_deg is None:
             self.calculate_degrees()
         return self.__in_deg, self.__out_deg
-    
+
     @property
     def G(self):
         return self.__graph
@@ -100,9 +104,9 @@ class DBG:
 
     def prune_low_coverage_connections(self, seq_divergence_ceiling: float = 0.2):
         """
-        For each node, compare forward connected nodes and pick larger of pair, swallowing up hte smaller's coverage 
-        where sequences are small enough (< pruned_seq_size_ceiling) and similar enough (< seq_divergence_ceiling) 
-        
+        For each node, compare forward connected nodes and pick larger of pair, swallowing up hte smaller's coverage
+        where sequences are small enough (< pruned_seq_size_ceiling) and similar enough (< seq_divergence_ceiling)
+
         :param pruned_seq_size_celing: sequence pairs smaller than this will be compared
         :param seq_divergence_ceiling: sequences more divergent than this (where increasing to 1 is more different) will not be collapsed into each other
         """
@@ -115,41 +119,41 @@ class DBG:
             for i in range(len(vs)):
                 for j in range(i+1, len(vs)):
                     # get node sequence
-                    v1, v2 = vs[i], vs[j] 
+                    v1, v2 = vs[i], vs[j]
                     # reconstruct original sequence for both: prev + last char of node
-                    seq1 = u + v1[-1] 
+                    seq1 = u + v1[-1]
                     seq2 = u + v2[-1]
                     # calculate string difference between both sequences
                     divergence = self._calc_divergence(seq1,seq2) # closer to 1 is more divergent
                     # if they are divergent enough
-                    if divergence < seq_divergence_ceiling: 
+                    if divergence < seq_divergence_ceiling:
                         # pick more covered of two, adding its coverage and removing it
                         if self.__graph[u][v1] >= self.__graph[u][v2]: # if v2 seen more, swallow v2 coverage
                             self.__graph[u][v1] += self.__graph[u].pop(v2)
                         else:
-                            self.__graph[u][v2] += self.__graph[u].pop(v1)  # if v1 seen more, etc.    
-    
-    def make_contigs(self, returns=False):
+                            self.__graph[u][v2] += self.__graph[u].pop(v1)  # if v1 seen more, etc.
+
+    def make_contigs(self, returns=False, join_sub_contigs = True):
         """
         """
         sub_contigs = []
         visited = set()
 
         self.calculate_degrees()
-        
+
         in_weights = self.__in_deg
-        
+
         for u in tqdm(list(self.__graph), desc="Finding Contigs"):
             # get nodes connected to u
             out_edges = list(self.__graph[u])
-            # check if there are outgoing edges 
+            # check if there are outgoing edges
             is_branching = (len(out_edges) != 1) or (in_weights.get(u, 0) != 1)
             if not is_branching:
                 continue
-            
+
             #–––– for each vertex in outgoing edges
             for v in out_edges:
-                # if this pair has been visited, this is a loop, pass on 
+                # if this pair has been visited, this is a loop, pass on
                 if (u, v) in visited:
                     continue
                 path_nodes = [u, v]
@@ -167,7 +171,7 @@ class DBG:
                 # construct contiguous sequence: first node + last char of all next
                 seq = path_nodes[0] + ''.join(n[-1] for n in path_nodes[1:])
                 sub_contigs.append((seq, path_nodes, coverages))
-            
+
         #–––– traverse again, this time exploring loops
         for u in list(self.__graph):
             for v in list(self.__graph[u]):
@@ -190,35 +194,73 @@ class DBG:
                     curr = nxt
                 seq = path_nodes[0] + ''.join(n[-1] for n in path_nodes[1:])
                 sub_contigs.append((seq, path_nodes, coverages))
+
         self.__sub_contigs = sub_contigs
-        
-        
+
+        if not join_sub_contigs:
+            return self.__sub_contigs
+
         #–––– join contig subunits together where possible
-        
-        print("Joining subcontigs...")
-        # index by first node of each sub-contig
-        start_idx = defaultdict(list)
-        for item in sub_contigs:
-            start_idx[item[1][0]].append(item)
+        if join_sub_contigs:
+            # index by first node of each sub-contig
+            contigs = list(sub_contigs)
+            prev_len = 0
+            it = 0
+            with tqdm(desc="Joining subcontigs") as pbar:
+                while len(contigs) != prev_len:
+                    prev_len = len(contigs)
+                    start_idx = defaultdict(list)
+                    for item in contigs:
+                        start_idx[item[1][0]].append(item)
+                    for seq_i, nodes_i, covs_i in list(contigs):
+                        for seq_j, nodes_j, covs_j in start_idx.get(nodes_i[-1], []):
+                            joined = (seq_i + seq_j[len(nodes_i[-1]):], nodes_i + nodes_j[1:], covs_i + covs_j)
+                            if joined not in contigs:
+                                contigs.append(joined)
+                    it+=1
+                    pbar.update(1)
+                    pbar.set_postfix({"contigs": len(contigs)})
 
-        contigs = list(sub_contigs)  # keep originals
-        
-        prev_len = 0
-        while len(contigs) != prev_len:
-            prev_len = len(contigs)
-            start_idx = defaultdict(list)
-            for item in contigs:
-                start_idx[item[1][0]].append(item)
-            for seq_i, nodes_i, covs_i in list(contigs):
-                for seq_j, nodes_j, covs_j in start_idx.get(nodes_i[-1], []):
-                    joined = (seq_i + seq_j[len(nodes_i[-1]):], nodes_i + nodes_j[1:], covs_i + covs_j)
-                    if joined not in contigs:
-                        contigs.append(joined)
+            # start_idx = defaultdict(list)
+            # for item in sub_contigs:
+            #     start_idx[item[1][0]].append(item) # first kmers in each sub_contig
+            
+            # # last node for each subcontig
+            # end_nodes = {item[1][-1] for item in sub_contigs}
+            # # first nodes not reached by any other subcontig's end
+            # sources = [item for item in sub_contigs if item[1][0] not in end_nodes]
+            # seen = {seq for seq, _, _ in sub_contigs}
+            # contigs = []
+            
+            # # for each source node, traverse by finding seqs that start with end node
+            # for seq, nodes, covs in tqdm(sources, desc="Joining subcontigs"):
+            #     # current state
+            #     stack = [(seq, nodes, covs)]
+            #     while stack:
+            #         # explore top of stack
+            #         curr_seq, curr_nodes, curr_covs = stack.pop()
+            #         # nexts are seqs that start with last node of current seq
+            #         nexts = start_idx.get(curr_nodes[-1], [])
+            #         if not nexts:
+            #             # if seq hasnt been found
+            #             if curr_seq not in seen:
+            #                 # add to memory
+            #                 seen.add(curr_seq)
+            #                 contigs.append((curr_seq, curr_nodes, curr_covs))
+            #         else:
+            #             # if there are more nexts, add all branches to stack
+            #             for s_seq, s_nodes, s_covs in nexts:
+            #                 stack.append((
+            #                     curr_seq + s_seq[len(curr_nodes[-1]):], # grow contig string
+            #                     curr_nodes + s_nodes[1:], # add nodes to end of current nodes
+            #                     curr_covs + s_covs # add coverages
+            #                 ))
 
-        # returns 
-        self.contigs = contigs
-        if returns:
-            return self.contigs
+
+            self.contigs = contigs
+
+            if returns:
+                return self.contigs
 
 
 # \\\\
@@ -245,23 +287,23 @@ def load_hobbit(up_to = None):
 def sim_reads(seq, N, read_len):
     '''
     Simulate reads from a sequence
-    
+
     :param seq: string of characters
     :param N: number of reads to generate
     :param read_len: size of each read
     '''
     rng = np.random.default_rng(123)
-    return [seq[strt:strt+read_len]  
-            for _ in range(N) 
+    return [seq[strt:strt+read_len]
+            for _ in range(N)
                 for strt in [rng.integers(0, len(seq)-read_len+1)]
                 ]
-    
+
 # # manual test
 # branching_reads = ["axbcde"] * 5 + ["abfdeghij"] * 5
 # branching_graph = DBG(branching_reads, 3)
 # branching_graph.plotG()
 # contigs  = branching_graph.make_contigs(True)
 # seqs = [seq for seq, _, _ in contigs]
-# for seq in seqs: 
+# for seq in seqs:
 #     print(seq)
 # all([len(seqs) == 5] + [x in seqs for x in ["axbcde","abfde","axbcdeghij","deghij","abfdeghij"]])
