@@ -14,7 +14,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: environment.yaml
-          activate-environment: basic
+          activate-environment: metagenome_profiler
 
       - name: run tests
         shell: bash -el {0}
