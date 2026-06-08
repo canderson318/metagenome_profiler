@@ -37,3 +37,4 @@ dependencies:
   - tar
   - kraken2
   - scikit-bio
+  - pytest
