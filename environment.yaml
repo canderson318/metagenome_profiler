@@ -1,4 +1,4 @@
-name: basic
+name: metagenome_profiler
 channels:
   - conda-forge
   - bioconda
@@ -36,3 +36,4 @@ dependencies:
   - networkx
   - tar
   - kraken2
+  - scikit-bio

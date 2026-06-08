@@ -11,12 +11,14 @@ from  multiprocessing import Pool
 from src.lib.qc.kmers import extract_kmers, get_num_reads
 from src.lib.qc.index_host import index_host
 
-def host_match(read:SeqIO.SeqRecord,ref_kmers: set, K = None):
+def host_match(read:SeqIO.SeqRecord,ref_kmers: set, K = None) -> float:
     """
     Returns average kmer hit against genome reference kmers. 
     :param k: size of kmers
     :param read: read to align to reference
+    :return: proportion of a read's kmers that match reference kmers
     """
+    
     ref_k = len(next(iter(ref_kmers)))
 
     if K is None:
@@ -64,7 +66,7 @@ def process_chunk(args):
     return results
 
 
-def align_reads(samp_file, ref_index_file, K, n_chunks = 16,ncores = 8, test = False, thresh = .2):
+def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8, test = False):
     """
     Align each read to reference by comparing each read's kmers to reference kmers
     """
@@ -97,15 +99,15 @@ def align_reads(samp_file, ref_index_file, K, n_chunks = 16,ncores = 8, test = F
     else:
         return hit_inds
     
-def align(samp_file, ref_file, K, out_dir,ncores = 8, test = False, force = False):
+def align(samp_file, ref_file, K, out_dir,thresh = .2,ncores = 8, test = False, force = False,which_scaffolds = [0]):
     
-    ref_index_file_path, _ = index_host(K=K, ref_file=ref_file, which_scaffolds=[0], force=False)
+    ref_index_file_path, _ = index_host(K=K, ref_file=ref_file, which_scaffolds=which_scaffolds , force=False)
 
     ind_file = out_dir / "reads_from_host.inds"
     
     if (not ind_file.exists()) or force:
-        hit_inds = align_reads(samp_file, ref_index_file_path, K=K, test=test, n_chunks = ncores * 2, ncores = ncores) 
-        print(f"Hit indices saved to {str(ind_file)}")
+        hit_inds = align_reads(samp_file, ref_index_file_path, K=K, thresh = thresh,test=test, n_chunks = ncores * 2, ncores = ncores) 
+        print(f"Hit indices (similarity > {thresh}) saved to {str(ind_file)}")
         np.savetxt(ind_file, hit_inds, delimiter="\n", fmt="%d")
     else:
         print("Reads already aligned to host so using those.\nUse `force` to align again.")

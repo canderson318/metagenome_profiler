@@ -1,11 +1,11 @@
 from pathlib import Path
 from Bio import SeqIO
 
-def get_num_reads(samp_file, format = "fastq"):
-    samp_file = Path(samp_file)
-    size_file = samp_file.parent / ("."+samp_file.stem + "_size")
+def get_num_reads(fast_file, format = "fastq"):
+    fast_file = Path(fast_file)
+    size_file = fast_file.parent / ("."+fast_file.stem + "_size")
     if not size_file.exists():
-        size = sum(1 for _ in SeqIO.parse(samp_file, format))
+        size = sum(1 for _ in SeqIO.parse(fast_file, format))
         with open(size_file, 'wt') as f:
             f.write(str(size))
     else:

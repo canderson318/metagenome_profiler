@@ -1,28 +1,53 @@
-from src.lib.par_utils import *
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pathlib import Path
 import numpy as np
+from src.lib.qc.kmers import  get_num_reads
+from numpy.typing import NDArray
+from tqdm import tqdm
 
-def get_avg_phred(rec:SeqRecord) -> float:
-    if not isinstance(rec, SeqRecord):
-        raise TypeError("Record should be of type SeqRecord")
-    return np.mean([p for p in rec.letter_annotations['phred_quality']])
+def iterate_phred_lines(samp_file):
+    phreds = []
+    with open(samp_file) as f:
+        while True:
+            f.readline() # h1
+            f.readline() # seq 
+            f.readline() # h2
+            phred = f.readline()
+            if not phred:
+                break
+            yield phred # phred
 
-def phred_filter(samp_file, out_dir, thresh = 90, force = False):
+# Setting up the ASCII Phred score conversion table
+phred_table = {}
+for i in range(33, 127):
+    phred_table[chr(i)] = i - 33
+    
+def get_avg_phred(samp_file)-> NDArray[float]:
+    phreds = []
+    ITER = iterate_phred_lines(samp_file)
+    for _ in tqdm(range(get_num_reads(samp_file)), desc = "Calculating average Phred per read", unit = 'line'):
+        line = next(ITER)
+        phreds.append(np.mean([ phred_table[p] for p in line.strip() ]))
+    return np.array( phreds, dtype = np.float32)
+
+def phred_filter(samp_file, out_dir, thresh = 20, force = False) -> np.array:
     
     hit_file = out_dir / "phred_hits.txt"
+    phred_file = out_dir / "phreds.txt"
     
-    print("Calculating average per read Phred scores...")
-    if (not hit_file.exists()) or force:
-        phreds = [get_avg_phred(rec) for rec in SeqIO.parse(samp_file, "fastq")]
+    if not hit_file.exists() or force:
+        phreds = get_avg_phred(samp_file)
         print(f"Done.")
-        hit_inds = np.where([x > thresh for x in phreds])
-        print(f"Phred hit indices saved to {str(hit_file)}")
+        np.savetxt(phred_file,phreds, delimiter="\n", fmt="%d")
+        print(f"Phreds saved to {phred_file}")
+        hit_inds = np.where([x < thresh for x in phreds])[0]
         np.savetxt(hit_file, hit_inds, delimiter="\n", fmt="%d")
+        print(f"Phred hit indices (p < {thresh}) saved to {str(hit_file)}")
     else:
         print("Phreds already calculated so using those.\nUse `force` to run again.")
+        # hit_file = "out/phred_hits.txt"
         hit_inds = np.loadtxt(hit_file)
     
     return hit_inds

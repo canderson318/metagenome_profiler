@@ -30,14 +30,3 @@ done
 
 
 echo "All downloads complete."
-
-
-# day3$ ./src/download_sra.sh
-# Downloading SRR12464727...
-# Rejected 39335609 READS because of filtering out non-biological READS
-# Rejected 78117 READS because of Quality-Filtering
-# Read 39335609 spots for SRR12464727
-# Written 39257492 spots for SRR12464727
-# Done: SRR12464727
-# Downloading SRR12432009...
-
