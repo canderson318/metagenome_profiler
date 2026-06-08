@@ -74,12 +74,12 @@ def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8):
 
     # make chunks of indices to parallelize over
     N_reads = get_num_reads(samp_file)
-    print(f"Finding {n_chunks} chunk offsets...")
+    print(f"\tFinding {n_chunks} chunk offsets...")
     offsets, chunk_size = find_chunk_offsets(samp_file, n_chunks, N_reads)
     chunk_args = [(samp_file, chunk_size, offset, K) for offset in offsets]
     print("Done.")
 
-    print(f"Processing {len(chunk_args)} chunks...")
+    print(f"\tProcessing {len(chunk_args)} chunks...")
     with Pool(processes=ncores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
         res = pool.map(process_chunk, chunk_args)
 
@@ -92,7 +92,10 @@ def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8):
     else:
         return hit_inds
     
-def align(samp_file, ref_file, K, out_dir,thresh = .2,ncores = 8, force_aln = False,force_index = False, which_scaffolds = [0]):
+def align(samp_file, ref_file, K, out_dir,thresh = .2,ncores = 8, force_aln = False,force_index = False, which_scaffolds = None):
+    
+    if which_scaffolds is None:
+        raise ValueError("Please provide reference genome scaffolds to `which_scaffolds` in the format of a set of fasta headers (e.g. '>XXX_1234.1').")
     
     ref_index_file_path, _ = index_host(K=K, ref_file=ref_file, which_scaffolds=which_scaffolds , force=force_index)
 

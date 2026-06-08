@@ -159,6 +159,8 @@ def read_str_distance_analysis(result, top_species_by_prop, out_dir, fig_path, r
     runs PERMANOVA to test for separation between taxa on the stratified read sample string distance matrix
     and plots the MDS embedding of the distance matrix to fig_path. Saves PERMANOVA
     result to out_dir / "permanova_res.csv" and returns the MDS embedding (X).
+    
+    :param read_sample_N: number of reads to sample stratified on species and calculate string distance between.
     """
     reads = result['reads'][result['name'].isin(top_species_by_prop.index)]
     N = read_sample_N # 2min w/ 10_000 for strdist

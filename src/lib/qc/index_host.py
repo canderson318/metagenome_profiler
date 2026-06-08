@@ -33,8 +33,12 @@ def index_host(K, ref_file, which_scaffolds, force = False):
             for rec in SeqIO.parse(ref_file, "fasta")
             if rec.id in which_scaffolds
         ]
-
-        if len(seqs) > 1:
+        
+        seqs_len = len(seqs)
+        if  seqs_len == 0:
+            raise ValueError("Scaffold sequences not found.")
+        
+        if seqs_len > 1:
             with Pool(processes=8) as pool:
                 res = pool.map(partial(extract_kmers, k=K), seqs)
             genome_kmers = set().union(*res)

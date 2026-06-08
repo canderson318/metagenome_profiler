@@ -1,3 +1,5 @@
+import sys
+import time
 from Bio import SeqIO
 from pathlib import Path
 
@@ -23,19 +25,25 @@ samp_file = in_dir / "SRR12464727.fastq"
 # select chromosome headers
 genome_headers = [l.split(" ")[0].lstrip(">") 
                   for l in iter(open(ref_file.parent.parent / "headers.txt"))]
-# genome_headers_set = set(genome_headers)
-# seqs = {rec.id: rec.seq for rec in SeqIO.parse(ref_file,'fasta') if rec.id in genome_headers_set}
+genome_headers_set = set(genome_headers)
+# sum(1  for rec in SeqIO.parse(ref_file,'fasta') if rec.id == genome_headers[0])
 
+
+t0 = time.time()
 from src.lib.qc.filter_reads import filter_reads
 filtered_read_path = filter_reads(samp_file, ref_file, out_dir = out_dir, K = 31,
                                   out_file = "filtered.fasta", 
                                   aln_thresh= .5,
-                                  force_phred = False, # phred.txt does not change depending on other parameters, phred_hits.txt changes based on threshold
-                                  force_index=False, # only changes with K
+                                  force_phred = True, # phred.txt does not change depending on other parameters, phred_hits.txt changes based on threshold
+                                  force_index=True, # only changes with K
                                   force_aln = True, # changes based on K and thresholds
                                 #   which_host_scaffolds = list(genome_headers)[0]
-                                  which_host_scaffolds = set(genome_headers[])
+                                  which_host_scaffolds = set([genome_headers[i] for i in range(2)]) # 14min w/ [0]
                                   )
+T = time.time()- t0
+print(f"time = {round(T/60):.0f}' {round((T/60)%1 * 60)}\"")
+
+sys.exit()
 
 # \\\\
 # \\\\
