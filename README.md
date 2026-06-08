@@ -4,8 +4,7 @@
 <!-- # Assignment -->
 <!-- Environmental monitoring is a critical component of pandemic readiness. The objective of the programming assignment is to develop a general method for characterizing the viral communities in  metagenomic sample. The input to your method is a short-read fastq file (examples below) containing sequences from a metagenomic sample. The output is a characterization of the virome that would be useful to someone working in pandemic preparedness (researcher, clinician, and/or public health official). Is up to you to decide the content and format of this report, both of which should be justified in your written and recorded reports. -->
 
-
-This package is a minimal virome characterization tool for characterizing the viral abundance present in a metagenomic sample. It uses filtering methods including kmer-based host-alignment and phred-score filtering, and read classification using Kraken2's viral genome reference database. 
+The objective of this package is to provide a general method for characterizing the viral communities in  metagenomic sample. The inputs include a short-read fastq file containing sequences from a metagenomic sample, a reference fna file, and a viral reference database (examples below). The output is a characterization of the virome that may be useful to someone working in monitoring viral communities in the environment. The tools include filtering methods like kmer-based host-alignment and phred-score filtering, and read classification using Kraken2's viral genome reference database. 
 
 __Core components:__
 - Host alignment based read filtering
