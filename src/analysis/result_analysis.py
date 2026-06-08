@@ -9,10 +9,10 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import Levenshtein as LV
 from sklearn.manifold import MDS
-from sklearn.cluster import KMeans
 from tqdm import tqdm
 import re
 import warnings
+
 from skbio.stats import distance
 
 def result_overview(result, fig_path):

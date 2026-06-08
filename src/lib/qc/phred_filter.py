@@ -3,9 +3,10 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from pathlib import Path
 import numpy as np
-from src.lib.qc.kmers import  get_num_reads
 from numpy.typing import NDArray
 from tqdm import tqdm
+
+from src.lib.qc.kmers import  get_num_reads
 
 def iterate_phred_lines(samp_file):
     phreds = []

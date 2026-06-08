@@ -31,7 +31,6 @@ dependencies:
   - statsmodels=0.14.*
   - tqdm=4.*
   - biopython
-  - blast
   - ncbi-datasets-cli
   - networkx
   - tar

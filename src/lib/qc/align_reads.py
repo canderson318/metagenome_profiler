@@ -8,6 +8,7 @@ import pickle as pkl
 import multiprocessing
 multiprocessing.set_start_method('fork', force=True)
 from  multiprocessing import Pool
+
 from src.lib.qc.kmers import extract_kmers, get_num_reads
 from src.lib.qc.index_host import index_host
 

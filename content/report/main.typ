@@ -6,8 +6,8 @@
 ////////////////////
 // Document Settings
 ////////////////////
-#set page(margin: 1in, width: 8.5in, height: 11in, numbering: "1")
-#let fntsz = 10pt
+#set page(margin: .5in, width: 8.5in, height: 11in, numbering: "1")
+#let fntsz = 11pt
 #let after = fntsz * 1.5
 #set text(font: "Georgia", size: fntsz)
 #set par(leading: fntsz, spacing: after)
@@ -76,7 +76,9 @@
 //////////////////////
 //////////////////////
 
-#title[Metatranscriptomic Virome Characterization of Bat Stool]
+// Written report (25%): This maximum 4-page (11pt arial font, ½ inch margins) technical document with an introduction, methods, and results sections. The introduction gives any necessary background and describes and justifies your strategy. The method section defines the input, presents the algorithm, and details the expected output. The results contain experiments, results, and discussion. You should cite the appropriate scientific literature where appropriate. The list of citations does not count against the page limit.
+
+#title[Metatranscriptomic Virome Characterization of _Rhinolophus malayanus_ Bat Feces]
 #align(center)[By: Christian Anderson\ #today.display("[day] [month repr:long] [year]")]
 
 
@@ -92,8 +94,13 @@
 // - importance 
 // - example 
 
-= Approach
+
+= Methods
 
 = Results
 
 = Discussion   
+
+
+= AI use statement
+

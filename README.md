@@ -27,7 +27,7 @@ The viral genome reference database was download was downloaded from [this link]
 The reference genome, in this case a bat, was downloaded using the ncbi `datasets` tool ([src/download_bat_genome.sh](src/download_bat_genome.sh)).
 
 
-# Directory Format
+# Directory - Format
 This package depends on the following directory structure:
 ```
 .
@@ -54,6 +54,13 @@ conda env create -n environment.yaml
 conda activate metagenome_profiler
 ```
 
+## Install
+Install this package directly from GitHub with 
+``` bash
+# # activate conda environment
+# conda activate metagenome_profiler
+pip install git+https://github.com/canderson318/metagenome_profiler.git@main
+```
 
 # Usage
 The following example is available at [src/main.py](src/main.py).
@@ -132,3 +139,32 @@ read_str_dist_MDS = read_str_distance_analysis(result, top_species_by_prop, out_
 ```
 
 
+# Specific Libraries
+
+`pandas`
+
+- For data manipulation and csv I/O.
+
+`biopython` 
+
+- For fasta/fastq I/O and handling with `SeqIO` module. 
+
+`skbio`
+
+- For permanova test.
+
+`seaborn` and `matplotlib.pyplot`
+
+- For data visualization. 
+
+`Levenshtein`
+
+- For read to read edit distance calculation.
+
+`sklearn.manifold`
+
+- For read edit distance matrix dimension reduction with `MDS` module.
+
+`kraken2`
+
+- For viral read classification against viral reference database.

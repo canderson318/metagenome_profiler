@@ -38,7 +38,8 @@ filtered_read_path = filter_reads(samp_file, ref_file, out_dir = out_dir, K = 31
                                   force_index=True, # only changes with K
                                   force_aln = True, # changes based on K and thresholds
                                 #   which_host_scaffolds = list(genome_headers)[0]
-                                  which_host_scaffolds = set([genome_headers[i] for i in range(2)]) # 14min w/ [0]
+                                  # which_host_scaffolds = set(genome_headers)
+                                  which_host_scaffolds = set([genome_headers[i] for i in range(3)]) # 14min w/ [0]; 43 min with 2
                                   )
 T = time.time()- t0
 print(f"time = {round(T/60):.0f}' {round((T/60)%1 * 60)}\"")
@@ -56,7 +57,6 @@ viral_db_path = in_dir / "kraken_2_viral_db"
 result_dir = out_dir / "kraken"
 
 from src.analysis.classify_reads import classify_reads
-
 # query reads against kraken viral db and load kraken result
 result  = classify_reads(filtered_read_path, viral_db_path,result_dir, 
                           force = True,
