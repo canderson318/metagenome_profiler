@@ -28,7 +28,7 @@ def classify_reads(fasta_path: Union[str,Path],db_path:Union[str,Path],out_dir:U
         sp.run([
             "kraken2", "--db", str(db_path),
             "--threads", str(ncores),
-            "--output", str(out_dir / "results.txt"),
+            "--output", str(out_dir / "result.txt"),
             "--report", str(out_dir / "report.txt"),
             str(fasta_path)
         ], stderr=sp.DEVNULL, stdout = sp.DEVNULL)  
@@ -36,16 +36,17 @@ def classify_reads(fasta_path: Union[str,Path],db_path:Union[str,Path],out_dir:U
     else:
         print(f"Viral taxon classification already exists at {str(out_dir)} so using those.\nUse `force` to query again.")
     
-    print("Loading results...")
+    print("Loading result...")
     
     # columns: pct_reads, reads_covered, reads_direct, rank, taxid, name
     ### rank: U)nclassified, (R)oot, (D)omain, (K)ingdom, (P)hylum, (C)lass, (O)rder, (F)amily, (G)enus, or (S)pecies
     report = pd.read_csv(out_dir / "report.txt", sep="\t", header=None, 
                     names=["pct","reads_cov","reads_direct","rank","taxid","name"])
-    result = pd.read_csv(out_dir / "results.txt", sep = '\t', header = None, 
+    result = pd.read_csv(out_dir / "result.txt", sep = '\t', header = None, 
                         names = ["classified", "readid", "taxid", "length", "loc"])
     print("Done.")
     
+    print("Formatting result...")
     # clean ws
     report = report.apply(lambda col: col.str.strip() if col.dtype == object else col)
     result = result.apply(lambda col: col.str.strip() if col.dtype == object else col)
@@ -64,5 +65,25 @@ def classify_reads(fasta_path: Union[str,Path],db_path:Union[str,Path],out_dir:U
     )
     
     result = result.merge(report[['name','rank','taxid']], how = 'left')
+    
+    cnt_reads = len(result)
+
+    # filter out unclassifieds
+    result = result[result['classified']== 'C'].copy()
+    print(f"{len(result):,} reads classified of {cnt_reads:,} total reads")
+
+    # add reads to each 
+    reads = {}
+    target_ids = set(result['readid'])
+    with open(fasta_path) as fin:
+        while True:
+            h, read = fin.readline().lstrip(">").split(" ")[0], fin.readline().strip()
+            if not h:
+                break
+            if h in target_ids:
+                reads.update({h:read})
+    result['reads'] = result['readid'].map(reads)
+
+    print("Done.")
     
     return result    

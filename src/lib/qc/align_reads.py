@@ -58,15 +58,15 @@ def init_worker(kmers):
 
 def process_chunk(args):
     samp_file, chunk_size, offset, K = args
-    results = []
+    res = []
     with open(samp_file) as f:
         f.seek(offset)
         for read in islice(SeqIO.parse(f, "fastq"), chunk_size):
-            results.append(host_match(read, _ref_kmers, K=K))
-    return results
+            res.append(host_match(read, _ref_kmers, K=K))
+    return res
 
 
-def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8, test = False):
+def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8):
     """
     Align each read to reference by comparing each read's kmers to reference kmers
     """
@@ -80,18 +80,11 @@ def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8, t
     print("Done.")
 
     print(f"Processing {len(chunk_args)} chunks...")
-    if test:
-        chunk_args = [(samp_file, 100,0, K)]
-        ref_kmers = set(list(ref_kmers)[:100])
-        print(f"\ttesting on first {len(chunk_args)}...")
-        with Pool(processes=ncores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
-            results = pool.map(process_chunk, chunk_args)
-    else:
-        with Pool(processes=ncores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
-            results = pool.map(process_chunk, chunk_args)
+    with Pool(processes=ncores, initializer=init_worker, initargs=(ref_kmers,)) as pool:
+        res = pool.map(process_chunk, chunk_args)
 
     print(f"Done.")
-    alignment = [x for chunk in results for x in chunk]
+    alignment = [x for chunk in res for x in chunk]
     hit_inds = np.where([x > thresh for x in alignment ])[0]
     
     if not hit_inds.size:
@@ -99,28 +92,22 @@ def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8, t
     else:
         return hit_inds
     
-def align(samp_file, ref_file, K, out_dir,thresh = .2,ncores = 8, test = False, force = False,which_scaffolds = [0]):
+def align(samp_file, ref_file, K, out_dir,thresh = .2,ncores = 8, force_aln = False,force_index = False, which_scaffolds = [0]):
     
-    ref_index_file_path, _ = index_host(K=K, ref_file=ref_file, which_scaffolds=which_scaffolds , force=False)
+    ref_index_file_path, _ = index_host(K=K, ref_file=ref_file, which_scaffolds=which_scaffolds , force=force_index)
 
-    ind_file = out_dir / "reads_from_host.inds"
+    index_file = out_dir / "reads_from_host.inds"
     
-    if (not ind_file.exists()) or force:
-        hit_inds = align_reads(samp_file, ref_index_file_path, K=K, thresh = thresh,test=test, n_chunks = ncores * 2, ncores = ncores) 
-        print(f"Hit indices (similarity > {thresh}) saved to {str(ind_file)}")
-        np.savetxt(ind_file, hit_inds, delimiter="\n", fmt="%d")
+    if (not index_file.exists()) or force_aln:
+        print("Aligning reads to host genome...")
+        hit_inds = align_reads(samp_file, ref_index_file_path, K=K, thresh = thresh, n_chunks = ncores * 2, ncores = ncores) 
+        print(f"Hit indices (similarity > {thresh}) saved to {str(index_file)}")
+        np.savetxt(index_file, hit_inds, delimiter="\n", fmt="%d")
     else:
         print("Reads already aligned to host so using those.\nUse `force` to align again.")
-        hit_inds = np.loadtxt(ind_file)
+        hit_inds = np.loadtxt(index_file)
     
-    if test:
-        print("\tSaving dummy hits")
-        rng = np.random.default_rng(234)
-        dummy_hits = np.sort(rng.choice(get_num_reads(samp_file),size = 39257000,replace = False)) 
-        np.savetxt(ind_file.parent / ("dummy_" + ind_file.stem + ind_file.suffix), dummy_hits, delimiter="\n", fmt="%d") 
-        print("\tDone.")
-    
-    if hit_inds is None:
+    if hit_inds.size == 0:
         print("No host reads found.")
         return np.array([])
     return hit_inds

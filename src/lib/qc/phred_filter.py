@@ -47,7 +47,7 @@ def phred_filter(samp_file, out_dir, thresh = 20, force = False) -> np.array:
         print(f"Phred hit indices (p < {thresh}) saved to {str(hit_file)}")
     else:
         print("Phreds already calculated so using those.\nUse `force` to run again.")
-        # hit_file = "out/phred_hits.txt"
+        # phreds = np.loadtxt(phred_file)
         hit_inds = np.loadtxt(hit_file)
     
     return hit_inds

@@ -114,33 +114,13 @@ def test_align_reads_returns_two_arrays(tmp_fastq, ref_kmers, tmp_path):
     with open(index_file, "wb") as f:
         pickle.dump(ref_kmers, f)
 
-    hit_inds, non_hit_inds = align_reads(tmp_fastq, index_file, K=31, test=False, ncores = 3)
+    hit_inds = align_reads(tmp_fastq, index_file, thresh = .2, K=31, ncores = 3)
     assert hit_inds is not None
-    assert non_hit_inds is not None
 # import pickle
 # index_file = tmp_path / "index.pkl"
 # with open(index_file, "wb") as f:
 #     pickle.dump(ref_kmers(ref_seq()), f)
-# hit_inds, non_hit_inds = align_reads(tmp_fastq(tmp_path), index_file, K=31, test=False, ncores = 3)
+# hit_inds, non_hit_inds = align_reads(tmp_fastq(tmp_path), index_file, K=31, ncores = 3)
 # hit_inds is not None
 # non_hit_inds is not None
-
-def test_align_reads_hit_and_nonhit_partition_reads(tmp_fastq, ref_kmers, tmp_path):
-    import pickle
-    index_file = tmp_path / "index.pkl"
-    with open(index_file, "wb") as f:
-        pickle.dump(ref_kmers, f)
-
-    hit_inds, non_hit_inds = align_reads(tmp_fastq, index_file, K=31, test=False, ncores = 3)
-    if hit_inds is not None:
-        combined = np.sort(np.concatenate([hit_inds, non_hit_inds]))
-        assert np.array_equal(combined, np.arange(len(combined)))
-# import pickle
-# index_file = tmp_path / "index.pkl"
-# with open(index_file, "wb") as f:
-#     pickle.dump(ref_kmers(ref_seq()), f)
-# hit_inds, non_hit_inds = align_reads(tmp_fastq(tmp_path), index_file, K=31, test=False)
-# if hit_inds is not None:
-#     combined = np.sort(np.concatenate([hit_inds, non_hit_inds]))
-#     np.array_equal(combined, np.arange(len(combined)))
 

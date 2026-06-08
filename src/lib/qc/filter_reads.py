@@ -5,16 +5,17 @@ from Bio.Seq import Seq
 from src.lib.qc.align_reads import align
 from src.lib.qc.phred_filter import phred_filter
 
-def filter_reads(samp_file, ref_file,out_dir, K = 31,  out_file = "host_filtered.fasta", test = False, phred_thresh = 20, aln_thresh = .2,force_aln = False,force_phred = False, which_host_scaffolds = [0] ):
+def filter_reads(samp_file, ref_file,out_dir, K = 31,  out_file = "host_filtered.fasta", phred_thresh = 20, aln_thresh = .2,force_index = False,force_aln = False,force_phred = False, which_host_scaffolds = [0] ):
     out_dir = Path(out_dir)
     
-    print("Aligning reads to host genome...")
+    # \\\\
+    # Align reads to host index: indexes host to K-length kmers and compares these to read K-mers
+    # \\\\
+    aln_hits = align(samp_file = samp_file, ref_file=ref_file, K = K,thresh=aln_thresh, out_dir = out_dir, ncores = 8, force_index = force_index,force_aln = force_aln,which_scaffolds=which_host_scaffolds)
     
-    if test:
-        aln_hits = set(np.loadtxt(out_dir / "dummy_reads_from_host.inds", dtype=int)) 
-    else:
-        aln_hits = align(samp_file = samp_file, ref_file=ref_file, K = K,thresh=aln_thresh, out_dir = out_dir, ncores = 8, test = test, force = force_aln,which_scaffolds=which_host_scaffolds)
-    
+    # \\\\
+    # Calculate Phred scores and record where lower than threshold (default 20)
+    # \\\\
     print("Removing low quality reads...")
     qual_hits = phred_filter(samp_file, out_dir, force = force_phred)
     

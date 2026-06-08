@@ -6,8 +6,7 @@ from multiprocessing import Pool
 from functools import partial
 from src.lib.qc.kmers import extract_kmers
 
-
-def _outlier_scaffold_indices(ref_file):
+def outlier_scaffold_indices(ref_file):
     lens = [len(rec) for rec in SeqIO.parse(ref_file, "fasta")]
     print(f"{len(lens)} scaffolds.")
     lens = np.array(lens)
@@ -18,28 +17,22 @@ def _outlier_scaffold_indices(ref_file):
     return indices
 
 
-def index_host(K, ref_file, which_scaffolds="all", filter_scaffolds=True, force = False):
+def index_host(K, ref_file, which_scaffolds, force = False):
+    """
+    compare K-length read mers to K-length reference genome mers. 
+    :param which_scaffolds: fasta headers of scaffolds to align against as set
+    :return: path to index and the reference genome kmers
+    """
 
-    if which_scaffolds == "all":
-        out_file = Path("out/") / f"host_index_k{K}_all.pkl"
-    else:
-        out_file = Path("out/") / f"host_index_k{K}.pkl"
+    out_file = Path("out/") / f"host_index_k{K}.pkl"
 
     if (not out_file.exists()) or force:
-
-        if not filter_scaffolds:
-            raise RuntimeWarning("Running on all scaffolds will take much too long.")
-
-        outlier_indices = _outlier_scaffold_indices(ref_file)
-
+        print("Indexing host genome...")
         seqs = [
             str(rec.seq).upper()
-            for i, rec in enumerate(SeqIO.parse(ref_file, "fasta"))
-            if i in outlier_indices
+            for rec in SeqIO.parse(ref_file, "fasta")
+            if rec.id in which_scaffolds
         ]
-
-        if which_scaffolds != "all":
-            seqs = [seqs[i] for i in which_scaffolds]
 
         if len(seqs) > 1:
             with Pool(processes=8) as pool:
@@ -51,6 +44,7 @@ def index_host(K, ref_file, which_scaffolds="all", filter_scaffolds=True, force 
         with open(out_file, "wb") as f:
             pkl.dump(genome_kmers, f)
 
+        print("Done.")
         print(f"Host index saved to {str(out_file)}")
 
     else:
