@@ -94,7 +94,17 @@ def align_reads(samp_file, ref_index_file, K,thresh, n_chunks = 16,ncores = 8):
         return hit_inds
     
 def align(samp_file, ref_file, K, out_dir,thresh = .2,ncores = 8, force_aln = False,force_index = False, which_scaffolds = None):
+    """
+    Align a samples reads against a reference genome using kmer comparison
     
+    :param thresh: kmer string similarity threshold. reads more similar than thresh are considered hits against the reference
+    :param K: reads/reference genome are cut up into K-length strings
+    :param force_aln: should alignment run or should it grab a previously saved one
+    :param force_index: should the reference be indexed run or should it grab a previously saved one
+    :param which_scaffolds: a set or list of fasta type headers for which scaffold of the reference genome is used in indexing->alignment
+    
+    :return: array of read indices where alignment with genome was greather than thresh
+    """
     if which_scaffolds is None:
         raise ValueError("Please provide reference genome scaffolds to `which_scaffolds` in the format of a set of fasta headers (e.g. '>XXX_1234.1').")
     

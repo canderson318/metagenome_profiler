@@ -11,7 +11,7 @@
 #let after = fntsz * 1.5
 #set text(font: "Georgia", size: fntsz)
 #set par(leading: fntsz, spacing: after)
-#set heading(numbering: "1.")
+// #set heading(numbering: "1.")
 
 ////////////////
 // Set Defaults
@@ -70,6 +70,16 @@
     )
 ]
 
+#show heading.where(level:1): it =>{
+    set text(fntsz+1pt,weight:"bold")
+    it
+}
+
+#show heading.where(level:2): it =>{
+    set text(fntsz,weight:"bold")
+    it
+}
+
 //////////////////////
 //////////////////////
 //////// BODY ////////
@@ -94,13 +104,58 @@
 // - importance 
 // - example 
 
+Environmental monitoring is a critical component of pandemic readiness. The objective of the programming assignment is to develop 
+
+
+- covid pandemic
+- importance of environmental monitoring
+- introduction of metagenome sampling
+    - shotgun sequencing
+    - host + microbiome
+- profile microbiome by removing host signal
+- look at community abundances
+    - what communities are present
+    - which dominate
+    - (why do abundances matter?)
+- need simple method for characterizing virome
+- example with bats
+    - cite @Zhou2020
 
 = Methods
+I developed a general method for characterizing the viral communities in a metagenomic sample where the input is a short-read fastq file containing short-read sequences and the output is a characterization of the virome communities present in the sample. 
+
+- host alignment and read filtering
+- phred filtering
+- viral database querying 
+- abundance analysis
+- read edit distance analysis
 
 = Results
 
-= Discussion   
+- how many original reads
+- how many removed because 
+    - from host
+    - low phred
+- how many reads were classified
+- rank classificationo
+    - more species than any other so reads are distinct enough for accurate LCA 
+- read edit distance
+    - permanova
+    - reads cluster with species
+        - species is main driver of read patterns
 
+= Discussion
+- 
 
 = AI use statement
+AI was used in the following cases during code development.
 
+- Helped me understand file IO byte offsets and how to find specific line's byte offsets using ```python open(file).tell()```
+- Helped me understand how the line pointer shifts each time ```python open(file).readline()``` is called
+- Helped me understand how to use an initializer with ```python Multiprocessing.Pool()``` to share an object globally across workers
+- 
+
+
+
+#pagebreak()
+#bibliography("../bibliography.bib", title: "References")
