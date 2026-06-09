@@ -30,7 +30,7 @@ def host_match(read:SeqIO.SeqRecord,ref_kmers: set, K = None) -> float:
     kmers = extract_kmers(seq, K)
     if not kmers:
         return 0.0
-    hits = len(kmers & ref_kmers)
+    hits = len(kmers & ref_kmers) # number of same reads btw read and host index
     return hits / len(kmers)
 
 # host_match(SeqIO.SeqRecord(Seq("ALKDJFLSKDJFSLDKALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSALKDJFLSKDJFSLDKFJSFJS")), ref_kmers)

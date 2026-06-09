@@ -14,5 +14,5 @@ fig, ax = plt.subplots(figsize = (6,4))
 sns.kdeplot(phreds, ax = ax, bw_adjust= 5)
 ax.set_title("Phred Scores KDE")
 plt.tight_layout()
-plt.savefig( fig_dir / "phred_dirstr.png")
+plt.savefig( fig_dir / "phred_distr.png")
 

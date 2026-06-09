@@ -9,6 +9,12 @@ from tqdm import tqdm
 from src.lib.qc.kmers import  get_num_reads
 
 def iterate_phred_lines(samp_file):
+    """
+    Generator yielding the Phred quality line for each read in a fastq file
+
+    :param samp_file: path to fastq file to read
+    :return: yields each read's raw phred quality string (4th line of each fastq rec)
+    """
     phreds = []
     with open(samp_file) as f:
         while True:
@@ -26,6 +32,12 @@ for i in range(33, 127):
     phred_table[chr(i)] = i - 33
     
 def get_avg_phred(samp_file)-> NDArray[float]:
+    """
+    Computes each read's average Phred quality score
+
+    :param samp_file: path to fastq file to read
+    :return: array of per-read average Phred scores (ASCII-decoded, offset 33)
+    """
     phreds = []
     ITER = iterate_phred_lines(samp_file)
     for _ in tqdm(range(get_num_reads(samp_file)), desc = "Calculating average Phred per read", unit = 'line'):
@@ -34,7 +46,17 @@ def get_avg_phred(samp_file)-> NDArray[float]:
     return np.array( phreds, dtype = np.float32)
 
 def phred_filter(samp_file, out_dir, thresh = 20, force = False) -> np.array:
-    
+    """
+    Flags reads whose average Phred quality score falls below a threshold
+
+    :param samp_file: path to fastq file to filter
+    :param out_dir: directory to save/load computed Phreds and hit indices
+    :param thresh: average Phred score threshold; reads scoring lower are considered hits (low quality)
+    :param force: should Phreds be recalculated or should previously saved ones be used
+
+    :return: array of read indices where average Phred score was lower than thresh
+    """
+
     hit_file = out_dir / "phred_hits.txt"
     phred_file = out_dir / "phreds.txt"
     
@@ -43,7 +65,7 @@ def phred_filter(samp_file, out_dir, thresh = 20, force = False) -> np.array:
         print(f"Done.")
         np.savetxt(phred_file,phreds, delimiter="\n", fmt="%d")
         print(f"Phreds saved to {phred_file}")
-        
+        hit_inds = np.where([x < thresh for x in phreds])[0]
         np.savetxt(hit_file, hit_inds, delimiter="\n", fmt="%d")
         print(f"Phred hit indices (p < {thresh}) saved to {str(hit_file)}")
     else:

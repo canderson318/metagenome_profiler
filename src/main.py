@@ -34,17 +34,17 @@ from src.lib.qc.filter_reads import filter_reads
 filtered_read_path = filter_reads(samp_file, ref_file, out_dir = out_dir, K = 31,
                                   out_file = "filtered.fasta", 
                                   aln_thresh= .5,
-                                  force_phred = True, # phred.txt does not change depending on other parameters, phred_hits.txt changes based on threshold
-                                  force_index=True, # only changes with K
-                                  force_aln = True, # changes based on K and thresholds
-                                #   which_host_scaffolds = list(genome_headers)[0]
-                                  # which_host_scaffolds = set(genome_headers)
-                                  which_host_scaffolds = set([genome_headers[i] for i in range(3)]) # 14min w/ [0]; 43 min with 2
+                                  phred_thresh=20,
+                                  force_phred = False, # phred.txt does not change depending on other parameters, phred_hits.txt changes based on threshold
+                                  force_index=True, # only changes with K and num scaffolds
+                                  force_aln = True, # changes based on K and thresholds and num scaffolds
+                                  # which_host_scaffolds = list(genome_headers)[0]
+                                  # which_host_scaffolds = set(genome_headers) # all 
+                                  which_host_scaffolds = set([genome_headers[i] for i in range(2)]) # 14min w/ [0]; 43 min with 2; 121min with 3
                                   )
-T = time.time()- t0
+T = time.time() - t0
 print(f"time = {round(T/60):.0f}' {round((T/60)%1 * 60)}\"")
 
-sys.exit()
 
 # \\\\
 # \\\\
@@ -85,4 +85,4 @@ top_species_by_prop = result_abundances(result, fig_path)
 # \\\\
 from src.analysis.result_analysis import read_str_distance_analysis
 read_str_dist_MDS = read_str_distance_analysis(result, top_species_by_prop,
-                                               out_dir,fig_path, read_sample_N = 500)
+                                               out_dir,fig_path, read_sample_N = 10_000)

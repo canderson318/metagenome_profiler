@@ -52,7 +52,9 @@ def index_host(K, ref_file, which_scaffolds, force = False):
         print(f"Host index saved to {str(out_file)}")
 
     else:
+        print("Loading host index...")
         with open(out_file, "rb") as f:
             genome_kmers = pkl.load(f)
+        print("Done.")
 
     return str(out_file), genome_kmers

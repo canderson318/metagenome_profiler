@@ -79,7 +79,7 @@ def result_overview(result, fig_path):
     rank_prop.index = labels
 
     fig,ax = plt.subplots(figsize = (8,8))
-    sns.barplot(y = rank_prop.index, x =rank_prop, ax = ax)
+    sns.barplot(y = rank_prop.index, x =rank_prop, ax = ax, color = "#5a0d87")
     ax.set_xscale("log")
     ax.set_ylabel("")
     ax.set_xlabel("Abundance")
@@ -123,7 +123,7 @@ def result_abundances(result,fig_path, percentile = .90):
     top_species_by_prop = species_prop[(species_prop > percentile )]
 
     fig,ax = plt.subplots(figsize = (8,8))
-    sns.barplot(y = top_species_by_prop.index, x = top_species_by_prop, ax = ax)
+    sns.barplot(y = top_species_by_prop.index, x = top_species_by_prop, ax = ax, color = "#5a0d87")
     ax.set_xscale("log")
     ax.set_ylabel("")
     ax.set_xlabel("Abundance")
@@ -132,7 +132,7 @@ def result_abundances(result,fig_path, percentile = .90):
     plt.savefig(fig_path / "species_abundance_bar.png", dpi = 150)
 
     fig,ax = plt.subplots(figsize = (8,8))
-    sns.barplot(y = genus_prop.index, x =genus_prop, ax = ax)
+    sns.barplot(y = genus_prop.index, x =genus_prop, ax = ax, color = "#5a0d87")
     ax.set_xscale("log")
     ax.set_ylabel("")
     ax.set_xlabel("Abundance")
@@ -141,7 +141,7 @@ def result_abundances(result,fig_path, percentile = .90):
     plt.savefig(fig_path / "genus_abundance_bar.png", dpi = 150)
 
     fig,ax = plt.subplots(figsize = (8,8))
-    sns.barplot(y = family_prop.index, x =family_prop, ax = ax)
+    sns.barplot(y = family_prop.index, x =family_prop, ax = ax, color = "#5a0d87")
     ax.set_xscale("log")
     ax.set_ylabel("")
     ax.set_xlabel("Abundance")
@@ -155,12 +155,13 @@ def read_str_distance_analysis(result, top_species_by_prop, out_dir, fig_path, r
     """
     Analyze pairwise Levenshtein distances between reads of the top-abundance taxa.
 
-    Stratified-samples up to read_sample_N reads (proportional by taxon), and computes pairwise string distances
-    runs PERMANOVA to test for separation between taxa on the stratified read sample string distance matrix
-    and plots the MDS embedding of the distance matrix to fig_path. Saves PERMANOVA
-    result to out_dir / "permanova_res.csv" and returns the MDS embedding (X).
+    Stratified-samples up to read_sample_N reads (by taxon proportion), and computes pairwise string distances and   runs a PERMANOVA to test for
+    separation between taxa on the stratified read sample string distance matrix.
+    Then plots the MDS embedding of the distance matrix to fig_path and saves PERMANOVA
+    result to out_dir / "permanova_res.csv" 
     
     :param read_sample_N: number of reads to sample stratified on species and calculate string distance between.
+    :return: MDS embedding (X).
     """
     reads = result['reads'][result['name'].isin(top_species_by_prop.index)]
     N = read_sample_N # 2min w/ 10_000 for strdist
@@ -193,7 +194,7 @@ def read_str_distance_analysis(result, top_species_by_prop, out_dir, fig_path, r
     perm = distance.permanova(str_DIST, result.loc[samp_inds,"name"].values)
     print(f"*** Permanova ***")      
     for idx in perm.index[1:]:
-        print(f"{idx} = {perm[idx]}")
+        print(f"\t{idx} = {perm[idx]}")
     perm_path = out_dir / "permanova_res.csv"
     print(f"Saving permanova result to {str(perm_path)}")
     perm.to_csv(perm_path, header=False)
