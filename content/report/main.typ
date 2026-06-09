@@ -342,7 +342,7 @@ AI was used in following cases during code development.
 - Helped me understand file IO byte offsets and how to find specific line's byte offsets using ```python open(file).tell()```.
 - Helped me understand how the line pointer shifts each time ```python open(file).readline()``` is called.
 - Helped me understand how to use an initializer with ```python Multiprocessing.Pool()``` to share an object globally across workers.
-- Helped me understand why github actions testing was failing when working locally.
+- Helped me understand why github actions testing was failing when pytests were working locally.
 
 
 
