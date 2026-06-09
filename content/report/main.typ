@@ -191,7 +191,6 @@ By continuing to monitor the source of viral pathogens, we can better predict it
 I developed a general method as a python package that uses host-reference read filtering, quality filtering, and viral read classification to enable researchers to characterize the viral communities present in a short-read metagenomic sample.
 This package takes as input a fastq file containing the short-read sequenced reads and outputs a suite of curated analyses after quality filtering for host and low quality reads.
 
-
 I first indexed the host genome using K = 31 kmers.
 I then generated the same size kmers for each of the sample reads and compared each set of read kmers to the set of host kmers.
 Reads where greater than 50% of kmers matched a host kmer I deemed host originated and removed.
@@ -202,7 +201,7 @@ Kraken2 uses exact k-mer matching to assign each read to the lowest common ances
 To evaluate the overall classification resolution across reads, I calculated the ratio of species low to high rank classification ratio: 
 
 #align(center)[$"count"("Species classifcations") / "count"("Genus,Family,Order, etc.
-classifications")$.]
+classifications")$]
 \
 A ratio less than 1 means there were more high-rank classifications than low, indicating the reads are not diverse on the species level.
 
@@ -217,6 +216,9 @@ The PERMANOVA test tests whether the distance structure can be explained by a gr
 Specifically, it tests the null hypothesis centroids and dispersions are the same across groups @Bakker2026.
 
 = Results
+
+Using the short-read shotgun metatranscriptomic fastq file (SRR12464727) by Zhou et al., I applied the pipeline to characterize the _R. malayanus_ virome.
+_R. malayanus_ bats don't have an assembled genome, so I indexed against the closest I could find, _Rhinolophus malayanus_ (GCF_004115265.2) bats.
 
 Filtering out host reads reduced the count down from #fmt-num(39257492, decimals: 0) to #fmt-num(39110352, decimals: 0), and phred filtering a further #fmt-num(22647, decimals: 0) left #fmt-num(39087705, decimals: 0) 'clean' reads which would ideally include only microbiome reads.
 However, because ```python filter_reads()``` would take an estimated $2.77 times 10^12$ hours against the full genome (@runtime), the host index was built against only the $2^"nd"$ and $3^"rd"$ chromosome scaffolds, so a small fraction of remaining reads may still be host-derived.
@@ -251,7 +253,8 @@ The Phred distribution (@phred) confirms high overall sequencing quality: only #
 The species-to-genus/family rank ratio was 38:1, with species-level (S-rank) classifications outnumbering higher-rank assignments.
 Again, a ratio greater than 1 indicates that the reads are sufficiently diverse and distinct for Kraken2's LCA to resolve them down to the species level rather than collapsing them into higher levels.
 Genus, Family, and Species abundances show _Studiervirinae_, _Sarbercovirus_, and _Staphylococcus phage Andhra_ as having the highest abundances, respectively (@family_ab,@genus_ab,@species_ab).
-Note, the reads not classifiable to Species are classified based on the next best alignment (Genus, then Family, etc.), so these abundances should be interpreted independently.
+Note, Family, Genus, and Species abundances are computed independently so each rank reflects only reads assigned at that rank, not aggregations from finer-grained ranks.
+  
 
 #grid(columns: (1fr,1fr),
     [
@@ -322,7 +325,9 @@ Together these results indicate that viral species identity is the primary drive
 
 = Discussion
 
-Horseshoe bats (_Rhinolophidae_) have been well established as coronavirus resivoirs @Han2023, and this study's abundance results reinforce that finding.
+Horseshoe bats (_Rhinolophidae_) have been well established as coronavirus reservoirs @Han2023, and this study's abundance results reinforce that finding.
+
+Despite only referencing reads against a small subset of chromosomes from a of a different species of _Rhinophilidae_, the pipeline still recovered the key CoV species reported by Zhou et al.
 
 SARS-CoV-2 and SARS coronavirus Tor2 rank among the top five most abundant species detected (@species_ab), and when taken together, represent the largest fraction of the classified virome, replicating Zhou et al.'s @Zhou2020 main result where _Rhinopholus malayanus_ fecal samples carry pandemic related CoV strains.
 Shotgun metagenomics proves a valid and useful tool for monitoring pathogen zoonosis.
