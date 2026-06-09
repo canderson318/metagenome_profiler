@@ -229,7 +229,7 @@ Purple point shows expected time to index and align against the full 28 chromoso
 
 Projected runtimes for each scaffold count were estimated from a log-linear model of three iterations at 1, 2, and 3 scaffolds.
 To reference against the full 28 chromosome scaffolds it would take #fmt-num(2.77e12, decimals: 0) hours.
-To save myself #fmt-num(calc.round((2.77e12 / (100 * 360 * 24))),decimals:0) lifetimes I had to reference the reads against only the $2^"nd"$ and $3^"rd"$ chromosome scaffolds.
+To save myself #fmt-num(calc.round((2.77e12 / (100 * 360 * 24))),decimals:0) lifetimes worth of time I had to reference the reads against only the $2^"nd"$ and $3^"rd"$ chromosome scaffolds.
 
 // total reads         =   39,257,492  (wc -l out/phreds.txt)
 // host removed        =      147,140  (wc -l out/reads_from_host.inds)
